@@ -1,0 +1,20 @@
+{
+  "actions": [
+    "combo",
+    "flashsale",
+    "freeship",
+    "loyalty",
+    "voucher"
+  ],
+  "round": 1,
+  "global_Q": [
+    1679.9065892470317,
+    1688.9576737662821,
+    1446.478305223106,
+    2178.6103207914457,
+    1724.9945045420043
+  ],
+  "hyperparameters": {
+    "alpha": 0.01
+  }
+}
