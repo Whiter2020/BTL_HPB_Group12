@@ -26,7 +26,11 @@ Core features include:
 - requests
 
 ## Running the System
-1. Start the Server + Driver
+0. Config executable path
+   Change the path in driver.py to your executable path
+- SPARK_SUBMIT = r"C:\spark\bin\spark-submit.cmd"
+- HDFS_EXE = r"C:\hadoop\bin\hdfs.cmd"  
+2. Start the Server + Driver
    The driver automatically launches the FastAPI WebSocket server:  
    `python3 server/driver.py`  
   This does:
