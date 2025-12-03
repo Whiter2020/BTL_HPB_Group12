@@ -21,15 +21,40 @@ Core features include:
 - FastAPI
 - Uvicorn
 - websockets
-- PySpark
-- Hadoop client 
 - requests
+- PySpark (spark 4.0.1)
+- Hadoop client (hadoop 3.4.0)
+- winutils.exe hadoop.dll and hdfs.dll binaries for hadoop on windows
+- Java 17 jdk
 
 ## Running the System
 0. Config executable path
    Change the path in driver.py to your executable path
-- SPARK_SUBMIT = r"C:\spark\bin\spark-submit.cmd"
-- HDFS_EXE = r"C:\hadoop\bin\hdfs.cmd"  
+```
+SPARK_SUBMIT = r"C:\spark\bin\spark-submit.cmd"
+HDFS_EXE = r"C:\hadoop\bin\hdfs.cmd"
+```
+1. Config parameter and generate dataset if necessary
+- In server/driver.py
+```
+ROUNDS = 10           # Number of aggregation round
+MIN_AGENTS = 4        # Number of clients
+POLL_INTERVAL = 5     # seconds between checks 
+ROUND_TIMEOUT = 300   # seconds to wait max for agents in a round
+```
+- If change number of rounds and agents, in Phan_1/federated_data.py, change the config to generate new dataset. Copy the choosen dataset to client/data before the run
+```
+#num_clients = MIN_AGENTS
+#num_round = ROUNDS
+#time_steps is recommended to be 100*ROUNDS
+generate_federated_bandits( num_clients=4, k=5, time_steps=1000, num_round = 10, stationary=False, drift_std=2, heterogeneous_noise=True,output_dir=<OUTPUT_DIR>)
+```
+- In client/bandit.py
+```
+EPSILON = 0.05   #epsilon parameter for e-greedy action selection
+```
+- Before the run, delete server/global_policies/global_policy_round_<R>.json,  server/global_policies/global_policy_latest.json/*, server/policies/*, client/log_reward/*
+  
 2. Start the Server + Driver
    The driver automatically launches the FastAPI WebSocket server:  
    `python3 server/driver.py`  
@@ -39,7 +64,9 @@ Core features include:
 - Monitors policies folder for updates
 - Runs the Spark aggregator
 - Pushes global_policy to clients
-2. Start Clients
+- ***NOTICE_1***: Must wait before "Server is ready!" to start clients
+- ***NOTICE_2***: Because of unknown reason, the client may experience timeout when connecting to server. In case of that, kill the server driver process and the terminal of client if needed. Restart the server driver and connect again
+3. Start Clients
   Each agent is launched with an ID:  
   `python3 client/client.py 1`    
   `python3 client/client.py 2`    
@@ -52,6 +79,7 @@ The client will:
 - Train locally
 - Send local_update messages
 - Receive new global policies from server
+- When done rounds of aggregation, the process will be ended
 ## Synthetic Federated Multi-Armed Bandits Dataset
 
 ### Dataset Overview
@@ -101,6 +129,8 @@ Two main types of datasets are generated:
    - All clients share the same noise level
    - Rewards are stationary (no drift)
    - Useful for baseline testing
+  
+
 
 
 
