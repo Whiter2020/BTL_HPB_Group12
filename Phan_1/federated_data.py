@@ -14,6 +14,8 @@ def generate_federated_bandits(
 ):
 
     os.makedirs(output_dir, exist_ok=True)
+    q_global = np.random.normal(318, 225, size=k)
+
 
     for client_id in range(1, num_clients + 1):
 
@@ -23,8 +25,15 @@ def generate_federated_bandits(
 
        
         # --- Initialize q* values ---
+        q_star = np.zeros_like(q_global)
+        for a in range(len(q_star)):
+            while True:
+                q_star[a] =  np.random.normal(q_global[a], 60)
+                if q_star[a]> 0:
+                    break
 
-        q_star = np.random.normal(325.6, 227, size=k)
+
+        
         
 
         
@@ -41,7 +50,9 @@ def generate_federated_bandits(
 
                 # For each arm — generate one reward sample per timestep (full environment record)
                 for a in range(k):
-                    reward = np.random.normal(q_star[a], client_noise)
+                    while True:
+                        reward = np.random.normal(q_star[a], client_noise)
+                        if reward > 0: break
 
                     data.append((
                         t,

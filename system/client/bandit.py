@@ -77,8 +77,39 @@ def bandit(branch_id, round_id):
     # ------------------------------------------------------------
     print("\nStarting training...")
 
-    reward = np.zeros(5)
-    time_taken = np.zeros(5)
+    
+    
+    os.makedirs(f"log_reward", exist_ok=True)
+    log_path = os.path.join(f"log_reward", f"agent_{branch_id}_rewards.json")
+    
+    if os.path.exists(log_path):
+        with open(log_path, "r") as f:
+            log_data = json.load(f)
+        reward = log_data["reward"]
+        time_taken = log_data["time_taken"]
+    else:
+        log_data = {
+            "reward" : 0,
+            "time_taken": 0,
+            "branch_id": branch_id,
+            "rounds": []
+        }
+        reward = 0
+        time_taken = 0
+    round_entry = None
+    
+    for r in log_data["rounds"]:
+        if r["round"] == round_id:
+            round_entry = r
+            break
+
+    if round_entry is None:
+        round_entry = {
+            "round": round_id,
+            "log": []
+        }
+        log_data["rounds"].append(round_entry)
+
 
     for time in range (int(time_stamp)):
         if method == "e-greedy":
@@ -95,17 +126,19 @@ def bandit(branch_id, round_id):
             if row_dict["ActionApplied"] == actions[a]:
                 if (row_dict["TotalSpent"]<0):
                     print("Row"+str(idx))
-                reward[a] +=  row_dict["TotalSpent"]
-                time_taken[a] += 1
+                Q_values[a]=Q_values[a]+alpha*(row_dict["TotalSpent"]-Q_values[a])
+                reward += row_dict["TotalSpent"]
+                time_taken += 1
+                avg_reward = reward / time_taken
+                round_entry["log"].append({
+                    "time": row_dict["Timestamp"],
+                    "avg_reward": float(avg_reward)
+                })
+
         print("Training completed.")
     print("[CLIENT]")
 
-    print(Q_values)
-    print(reward)
-    print(time_taken)
-    for i in range(len(actions)):
-        if time_taken[i]!=0:
-            Q_values[i]=Q_values[i]+alpha*((reward[i]/time_taken[i])-Q_values[i])
+   
   
     # ------------------------------------------------------------
     save_dir = f"./client/policy/branch_{branch_id}"
@@ -126,6 +159,10 @@ def bandit(branch_id, round_id):
     with open(save_path, "w") as f:
         json.dump(policy, f, indent=4)
 
+    log_data["reward"] = reward
+    log_data["time_taken"] = time_taken    
+    with open(log_path, "w") as f:
+        json.dump(log_data, f, indent=2)
     print(f"\nLocal policy saved to: {save_path}")
     return {"status": "Success"}
 
