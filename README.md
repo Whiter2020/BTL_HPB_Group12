@@ -16,30 +16,6 @@ Core features include:
 
 - Real-time global policy updates to all connected agents
 
-## Project structure
-system/
-│
-├── server/
-│   ├── server.py                      # WebSocket server + broadcast
-│   ├── aggregator_qvalues.py          # Aggregator code using FedAvg approach 2
-│   ├── driver.py                      # Orchestrates rounds, Spark submit
-│   ├── policies/                      # Stores local policy of each brands
-│       └── round_x/                   # Client updates per round
-│   └── global_policies/               # Stores global policy outputs
-│
-├── client/
-│   ├── client.py                      # Client agent (branch)
-│   ├── bandit.py                      # Bandit code for local Q_value
-│   ├── data/                          # Stores local data
-│   └── client/                        # Stores received global policy
-│       └── global/                    # Stores received global policy
-│       └── policy/                    # Stores computed local policy
-│
-├── Phan_1/
-│   ├── federated_data.py              # Generated data for different scenarios
-|
-└── README.md
-
 ## Requirements
 - Python 
 - FastAPI
@@ -51,8 +27,8 @@ system/
 
 ## Running the System
 1. Start the Server + Driver
-   The driver automatically launches the FastAPI WebSocket server:
-   python server/driver.py
+   The driver automatically launches the FastAPI WebSocket server:  
+   `python3 server/driver.py`  
   This does:
 - Starts Uvicorn in the background
 - Waits for WebSocket clients
@@ -60,11 +36,11 @@ system/
 - Runs the Spark aggregator
 - Pushes global_policy to clients
 2. Start Clients
-  Each agent is launched with an ID:
-  python client/client.py 1
-  python client/client.py 2
-  python client/client.py 3
-  python client/client.py 4
+  Each agent is launched with an ID:  
+  `python3 client/client.py 1`    
+  `python3 client/client.py 2`    
+  `python3 client/client.py 3`    
+  `python3 client/client.py 4`    
 The client will:
 - Connect via WebSocket to /ws
 - Register its client ID
