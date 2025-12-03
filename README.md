@@ -53,7 +53,7 @@ generate_federated_bandits( num_clients=4, k=5, time_steps=1000, num_round = 10,
 ```
 EPSILON = 0.05   #epsilon parameter for e-greedy action selection
 ```
-- Before the run, delete server/global_policies/global_policy_round_<R>.json,  server/global_policies/global_policy_latest.json/*, server/policies/*, client/log_reward/*
+- ***IMPORTANCE*** Before the run, delete server/global_policies/global_policy_round_<R>.json,  server/global_policies/global_policy_latest.json/*, server/policies/*, client/log_reward/*
   
 2. Start the Server + Driver
    The driver automatically launches the FastAPI WebSocket server:  
