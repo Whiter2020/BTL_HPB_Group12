@@ -1,12 +1,17 @@
 # driver.py
 import os
 import subprocess
+import asyncio
 import time
 import sys
 from datetime import datetime
 from pathlib import Path
+import uvicorn
+import socket
 import server
+from server import app
 from pyspark.sql import SparkSession
+import requests
 
 spark = SparkSession.builder.appName("ReadGlobalQ").getOrCreate()
 
@@ -22,6 +27,19 @@ ROUNDS = 10
 MIN_AGENTS = 4        # require at least this many agent files per round before aggregating
 POLL_INTERVAL = 5     # seconds between checks (adjust)
 ROUND_TIMEOUT = 300   # seconds to wait max for agents in a round
+def wait_for_server(host, port, timeout=10):
+    start_time = time.time()
+    while True:
+        try:
+            with socket.create_connection((host, port), timeout=1):
+                print("Server is ready!")
+                return True
+        except (ConnectionRefusedError, OSError):
+            if time.time() - start_time > timeout:
+                print("Timeout waiting for server.")
+                return False
+            time.sleep(0.5)
+
 
 def hdfs_ls(pattern):
     # uses 'hdfs dfs -ls' to list files; adjust if using 'hadoop fs -ls'
@@ -51,6 +69,19 @@ def run_aggregator(policies_dir, out_dir, round_number):
     return proc.returncode == 0
 
 def main():
+    """uvicorn.run(
+    app,
+    host="127.0.0.1",
+    port=8000,
+    log_level="info"
+    )"""
+    server_proc = subprocess.Popen(
+    ["python3","-m","uvicorn", "server:app", "--host", "127.0.0.1", "--port", "8000", "--log-level", "info"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    print("Server started in background.")
+
+    if not wait_for_server("127.0.0.1", 8000, timeout=60):
+        raise RuntimeError("Server did not start in time!")
+    time.sleep(2)
     for r in range(1, ROUNDS+1):
         policies_dir = f"{HDFS_BASE}/round_{r}"
         print(f"\n=== Starting round {r} at {datetime.now().isoformat()} ===")
@@ -78,7 +109,7 @@ def main():
         latest_src = f"{GLOBAL_OUT.rstrip('/')}/global_policy_round_{r}.json"
         latest_dst = f"{GLOBAL_OUT.rstrip('/')}/global_policy_latest.json"
         try:
-            subprocess.run([HDFS_EXE, "dfs", "-rm", "-f", latest_dst], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            subprocess.run([HDFS_EXE, "dfs", "-rm", "-r", latest_dst], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             subprocess.run([HDFS_EXE, "dfs", "-cp", latest_src, latest_dst], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             print([HDFS_EXE, "dfs", "-cp", latest_src, latest_dst])
             print("Updated latest pointer to", latest_dst)
@@ -91,9 +122,14 @@ def main():
         data_dict = row.asDict()
         print(data_dict)
 
-        server.broadcast_global_policy(data_dict)
+        requests.post(
+            "http://127.0.0.1:8000/broadcast",
+            json={"policy": data_dict},
+            timeout=10
+        )
         time.sleep(1)
 
+    server_proc.wait()  # blocks until server is manually stopped
     print("All rounds done.")
 
 if __name__ == "__main__":

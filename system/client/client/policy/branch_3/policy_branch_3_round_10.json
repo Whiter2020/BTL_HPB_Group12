@@ -1,0 +1,22 @@
+{
+    "branch_id": 3,
+    "round": 10,
+    "actions": [
+        "voucher",
+        "freeship",
+        "combo",
+        "flashsale",
+        "loyalty"
+    ],
+    "Q_values": [
+        11.134914901455733,
+        46.930269462043015,
+        17.61118633219201,
+        63.92969610356367,
+        68.40858280370793
+    ],
+    "hyperparameters": {
+        "alpha": 0.01,
+        "dataset_size": 73.0
+    }
+}

@@ -7,16 +7,30 @@ from typing import Dict
 import subprocess
 import uuid
 import os
+from pydantic import BaseModel
 from pyspark.sql import SparkSession
+from contextlib import asynccontextmanager
+
 
 spark = SparkSession.builder.appName("ReadGlobalQ").getOrCreate()
 
 
-HDFS_BASE = "hdfs:///policies"        # nơi agents upload policies
-GLOBAL_OUT = "hdfs:///global_policies"
+HDFS_BASE = "policies"        # nơi agents upload policies
+GLOBAL_OUT = "global_policies"
 latest_dst = f"{GLOBAL_OUT.rstrip('/')}/global_policy_latest.json"
+loop = None
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app):
+    global loop
+    loop = asyncio.get_running_loop()
+    print("Server started!")
+    yield
+    print("Server shutting down!")
+
+
+
+app = FastAPI(lifespan=lifespan)
 
 
 active_ws: Dict[str, WebSocket] = {}
@@ -57,24 +71,16 @@ async def save_local_update(client_id: str, content: dict):
     if round_k is None:
         print("[SERVER] ERROR: Missing 'round' in client update")
         return
+    client_dir = f"{HDFS_BASE}/round_{round_k}"
+    os.makedirs(client_dir, exist_ok=True)  # create the directory if it doesn't exist
+
 
     # 2. Save local JSON temporarily on server
-    temp_filename = f"/tmp/{client_id}_{uuid.uuid4().hex}.json"
+    temp_filename = f"{HDFS_BASE}/round_{round_k}/brand_{client_id}.json"
     with open(temp_filename, "w") as f:
-        json.dump(content["payload"], f)
+        json.dump(content, f)
 
-    # 3. HDFS target directory
-    hdfs_dir = f"{HDFS_BASE}/round_{round_k}"
-    hdfs_file = f"{hdfs_dir}/{client_id}.json"
-
-    # 4. Upload to HDFS
-    subprocess.run(["hdfs", "dfs", "-mkdir", "-p", hdfs_dir])
-    subprocess.run(["hdfs", "dfs", "-put", "-f", temp_filename, hdfs_file])
-
-    # 5. Remove temp file
-    os.remove(temp_filename)
-
-    print(f"[SERVER] Saved update from {client_id} → {hdfs_file}")
+ 
 
 
 @app.websocket("/ws")
@@ -97,10 +103,22 @@ async def websocket_endpoint(ws: WebSocket):
         active_ws[client_id] = ws
         print(f"[SERVER] WS connected: {client_id}")
         
-        df = spark.read.option("multiLine", True).json(latest_dst+"/*")
-        df.show()
-        row = df.collect()[0]  # collect returns a list of Row objects
-        data_dict = row.asDict()
+        if os.path.exists(latest_dst):
+            try:
+                df = spark.read.option("multiLine", True).json(latest_dst+"/*")
+                df.show()
+                if df.count() > 0:
+                    row = df.collect()[0]
+                    data_dict = row.asDict()
+                else:
+                    data_dict=None
+            except Exception as e:
+                data_dict=None
+
+                print(f"[ERROR] Failed to read JSON from {latest_dst}: {e}")
+        else:
+            data_dict=None
+            print(f"[WARN] File does not exist: {latest_dst}")
 
         await ws.send_text(json.dumps({"status": "ws_connected", "payload": data_dict}))
 
@@ -109,7 +127,7 @@ async def websocket_endpoint(ws: WebSocket):
             msg = await ws.receive_text()
             content = json.loads(msg)
             if content["type"] == "local_update":
-                await save_local_update(client_id, content)
+                await save_local_update(client_id, content["payload"])
             print(f"[SERVER] Received from {client_id}: {content}")
 
     except WebSocketDisconnect:
@@ -124,6 +142,7 @@ async def websocket_endpoint(ws: WebSocket):
 
 async def broadcast_global_policy(policy: dict):
     message = json.dumps({"type": "global_policy", "payload": policy})
+    print(policy)
 
     lost_clients = []
 
@@ -137,3 +156,13 @@ async def broadcast_global_policy(policy: dict):
     for cid in lost_clients:
         print(f"[SERVER] Removing offline client: {cid}")
         active_ws.pop(cid, None)
+
+class Policy(BaseModel):
+    policy: dict
+
+@app.post("/broadcast")
+async def broadcast(policy: Policy):
+    print("[SERVER] /broadcast endpoint was called")
+    print(policy)
+    await broadcast_global_policy(policy.policy)
+    return {"status": "ok"}
