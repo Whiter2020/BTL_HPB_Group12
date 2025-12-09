@@ -24,7 +24,7 @@ Core features include:
 - requests
 - PySpark (spark 4.0.1)
 - Hadoop client (hadoop 3.4.0)
-- winutils.exe hadoop.dll and hdfs.dll binaries for hadoop on windows
+- Download winutils.exe, hadoop.dll and hdfs.dll binaries from [a link](https://github.com/kontext-tech/winutils/tree/master/hadoop-3.4.0-win10-x64/bin) for hadoop on windows
 - Java 17 jdk
 
 ## Running the System
@@ -54,10 +54,12 @@ generate_federated_bandits( num_clients=4, k=5, time_steps=1000, num_round = 10,
 EPSILON = 0.05   #epsilon parameter for e-greedy action selection
 ```
 - ***IMPORTANCE*** Before the run, delete server/global_policies/global_policy_round_<R>.json,  server/global_policies/global_policy_latest.json/*, server/policies/*, client/log_reward/*
+- ***IMPORTANCE*** Also, remember to navigate to /system/
   
 2. Start the Server + Driver
    The driver automatically launches the FastAPI WebSocket server:  
-   `python3 server/driver.py`  
+   `python3 server/driver.py`  (MacOS)
+   `python server/driver.py`   (Windows)
   This does:
 - Starts Uvicorn in the background
 - Waits for WebSocket clients
@@ -72,6 +74,9 @@ EPSILON = 0.05   #epsilon parameter for e-greedy action selection
   `python3 client/client.py 2`    
   `python3 client/client.py 3`    
   `python3 client/client.py 4`    
+
+   *** For Windows: navigate to /client/, then run:
+   `python client/client.py {clientId}` 
 The client will:
 - Connect via WebSocket to /ws
 - Register its client ID
