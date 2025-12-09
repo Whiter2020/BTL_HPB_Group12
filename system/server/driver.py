@@ -75,9 +75,12 @@ def main():
     port=8000,
     log_level="info"
     )"""
+    
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    
     server_proc = subprocess.Popen(
-    ["python3","-m","uvicorn", "server:app", "--host", "127.0.0.1", "--port", "8000", "--log-level", "info"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    print("Server started in background.")
+    [sys.executable,"-m","uvicorn", "server:app", "--host", "127.0.0.1", "--port", "8000", "--log-level", "info"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=current_dir, shell=True)
+    print("Server started in background.", server_proc.pid)
 
     if not wait_for_server("127.0.0.1", 8000, timeout=60):
         raise RuntimeError("Server did not start in time!")
