@@ -58,8 +58,10 @@ EPSILON = 0.05   #epsilon parameter for e-greedy action selection
   
 2. Start the Server + Driver
    The driver automatically launches the FastAPI WebSocket server:  
-   `python3 server/driver.py`  (MacOS)
-   `python server/driver.py`   (Windows)
+   `python3 server/driver.py`
+
+   ***For Windows***: navigate to /system/server/, then run:
+   `python driver.py`
   This does:
 - Starts Uvicorn in the background
 - Waits for WebSocket clients
@@ -75,8 +77,8 @@ EPSILON = 0.05   #epsilon parameter for e-greedy action selection
   `python3 client/client.py 3`    
   `python3 client/client.py 4`    
 
-   *** For Windows: navigate to /client/, then run:
-   `python client/client.py {clientId}` 
+   ***For Windows***: navigate to /system/client/, then run:
+   `python client.py {clientId}` 
 The client will:
 - Connect via WebSocket to /ws
 - Register its client ID
