@@ -117,8 +117,8 @@ def main():
         global_Q[action] = sum_Qw / sum_w
         actions.append(action)
 
-    print(global_Q)
-    print("global_Q")
+    # print(global_Q)
+    # print("global_Q")
 
     actions = sorted(actions)
     sorted_actions = sorted(global_Q.keys())   # [1, 2, 3]
@@ -134,8 +134,8 @@ def main():
     }
   
     out_json = json.dumps(out_obj, indent=2)
-    print(out_json)
-    print("DONE")
+    # print(out_json)
+    # print("DONE")
 
     print(f"{OUT}\\global_Q_round_{ROUND}.json")
     sc.parallelize([out_json], 1).saveAsTextFile(f"{OUT}\\global_policy_round_{ROUND}.json")

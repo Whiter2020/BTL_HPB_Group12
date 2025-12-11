@@ -11,10 +11,11 @@ from pydantic import BaseModel
 from pyspark.sql import SparkSession
 from contextlib import asynccontextmanager
 import asyncio
+from fastapi import Body
 
 
 spark = SparkSession.builder.appName("ReadGlobalQ").getOrCreate()
-
+dashboard_clients = set()      # all websocket connections from dashboards
 
 HDFS_BASE = "policies"        # nơi agents upload policies
 GLOBAL_OUT = "global_policies"
@@ -35,6 +36,8 @@ app = FastAPI(lifespan=lifespan)
 
 
 active_ws: Dict[str, WebSocket] = {}
+# Store local rewards for each round
+LOCAL_REWARDS = {}  # { round_number: {branch_id: reward} }
 
 async def save_local_update(client_id: str, content: dict):
     """
@@ -168,3 +171,92 @@ async def broadcast(policy: Policy):
     asyncio.create_task(broadcast_global_policy(policy.policy))
     # await broadcast_global_policy(policy.policy)
     return {"status": "ok"}
+
+class RewardInput(BaseModel):
+    branch_id: int
+    round: int
+    reward: float
+
+@app.post("/reward")
+async def receive_reward(data: RewardInput):
+    r = data.round
+    bid = data.branch_id
+    rew = data.reward
+
+    if r not in LOCAL_REWARDS:
+        LOCAL_REWARDS[r] = {}
+
+    LOCAL_REWARDS[r][bid] = rew
+    print(f"[SERVER] Received reward from branch {bid} at round {r}: {rew}")
+
+    return {"status": "ok"}
+
+@app.get("/reward/{round}")
+async def get_reward_table(round: int):
+    rewards = LOCAL_REWARDS.get(round, {})
+    return {
+        "status": "ok",
+        "round": round,
+        "payload": rewards
+    }
+
+class RoundLog(BaseModel):
+    round: int
+    local_rewards: Dict[str, float]
+    global_reward: float
+    runtime: float
+    spark_latency: float
+    throughput: float
+    
+
+@app.post("/log_event")
+async def log_event(data: RoundLog):
+    global LATEST_LOG
+    LATEST_LOG = data
+    print(f"[SERVER] New log event for round {data.round}")
+
+    asyncio.create_task(broadcast_log_event(data))
+
+    return {"status": "ok"}
+
+async def broadcast_log_event(log_k: RoundLog):
+    message = json.dumps({
+        "type": "log_update",
+        "log": log_k.model_dump()
+    })
+    
+    print("[BROADCAST] New log event for round", log_k.round)
+
+    dead = []
+    print("[SERVER] Broadcasting to", len(dashboard_clients), "dashboard clients")
+    for ws in dashboard_clients:
+        try:
+            await ws.send_text(message)
+        except:
+            dead.append(ws)
+
+    for ws in dead:
+        dashboard_clients.remove(ws)
+
+
+@app.websocket("/ws/dashboard")
+async def dashboard_ws(ws: WebSocket):
+    await ws.accept()
+    dashboard_clients.add(ws)
+    print("[SERVER] Dashboard connected")
+
+    try:
+        while True:
+            await ws.receive_text()   # dashboard không gửi gì, chỉ giữ connection
+    except:
+        dashboard_clients.remove(ws)
+        print("[SERVER] Dashboard disconnected")
+
+# if __name__ == "__main__":
+#     import uvicorn
+#     uvicorn.run(
+#         "server:app",
+#         host="127.0.0.1",
+#         port=8000,
+#         reload=False
+#     )
