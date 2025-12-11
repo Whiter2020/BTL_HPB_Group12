@@ -10,6 +10,7 @@ import os
 from pydantic import BaseModel
 from pyspark.sql import SparkSession
 from contextlib import asynccontextmanager
+import asyncio
 
 
 spark = SparkSession.builder.appName("ReadGlobalQ").getOrCreate()
@@ -162,7 +163,8 @@ class Policy(BaseModel):
 
 @app.post("/broadcast")
 async def broadcast(policy: Policy):
-    print("[SERVER] /broadcast endpoint was called")
-    print(policy)
-    await broadcast_global_policy(policy.policy)
+    # print("[SERVER] /broadcast endpoint was called")
+    # print(policy)
+    asyncio.create_task(broadcast_global_policy(policy.policy))
+    # await broadcast_global_policy(policy.policy)
     return {"status": "ok"}

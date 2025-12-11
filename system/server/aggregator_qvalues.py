@@ -9,7 +9,9 @@ def parse_policy(content):
     try:
         obj = json.loads(text)
         return obj
-    except:
+    except Exception as e:
+        print("JSON parse error:", e)
+        print("CONTENT:", text[:200])
         return None
 
 
@@ -66,8 +68,21 @@ def main():
     IN = sys.argv[1]
     OUT = sys.argv[2]
     ROUND = int(sys.argv[3])
+    
+    def valid(p):
+        if p is None:
+            return False
+        if "round" not in p:
+            return False
+        try:
+            return int(p["round"]) == ROUND
+        except:
+            return False
 
-    conf = SparkConf().setAppName(f"FedAvg_Qvalues_Round_{ROUND}")
+    conf = SparkConf()\
+            .setAppName(f"FedAvg_Qvalues_Round_{ROUND}")\
+            .set("spark.python.worker.faulthandler.enabled", "true")\
+            .set("spark.sql.execution.pyspark.udf.faulthandler.enabled", "true")
     sc = SparkContext(conf=conf)
 
     rdd = sc.wholeTextFiles(IN)
@@ -76,8 +91,11 @@ def main():
     contents = rdd.map(lambda x: x[1])  # x[0] = filename, x[1] = file content
 
     parsed = contents.map(parse_policy)\
-                    .filter(lambda x: x is not None and int(x["round"]) == ROUND)
-    print(parsed.collect())
+                    .filter(valid)
+    # print(parsed.collect())
+    # for item in parsed.collect():
+    #     print(item)
+
     alphas = parsed.map(lambda p: p["hyperparameters"]["alpha"]).collect()
     avg_alpha = sum(alphas) / len(alphas) if len(alphas) !=0 else 0
 

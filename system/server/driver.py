@@ -128,7 +128,7 @@ def main():
         requests.post(
             "http://127.0.0.1:8000/broadcast",
             json={"policy": data_dict},
-            timeout=10
+            timeout=30
         )
         time.sleep(1)
 
