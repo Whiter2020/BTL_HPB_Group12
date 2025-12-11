@@ -278,7 +278,7 @@ def main():
         raise RuntimeError("Server did not start in time!")
     time.sleep(2)
     
-    client_procs = launch_clients_subprocess(NUM_CLIENTS)
+    # client_procs = launch_clients_subprocess(NUM_CLIENTS)
     
     # === Launch Dashboard ===
     # dashboard_proc = launch_dashboard_subprocess()
@@ -385,8 +385,8 @@ def main():
     finally:
         print("\n[DRIVER] Stopping all processes...")
 
-        for p in client_procs:
-            p.terminate()
+        # for p in client_procs:
+        #     p.terminate()
         
         # if dashboard_proc:
         #     dashboard_proc.terminate()

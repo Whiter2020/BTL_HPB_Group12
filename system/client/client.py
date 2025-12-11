@@ -97,7 +97,6 @@ async def run_client():
             if res["status"]!="Success":
                 exit
                 
-            ### NEW — gửi reward về server
             try:
                 reward_value = res.get("reward")
                 if reward_value is not None:
@@ -108,7 +107,7 @@ async def run_client():
                             "round": ROUND,
                             "reward": reward_value
                         },
-                        timeout=5
+                        timeout=10
                     )
                     print(f"[CLIENT] Sent reward to server: round={ROUND}, reward={reward_value}")
                 else:

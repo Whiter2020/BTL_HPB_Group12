@@ -56,7 +56,7 @@ EPSILON = 0.05   #epsilon parameter for e-greedy action selection
 - ***IMPORTANCE*** Before the run, delete server/global_policies/global_policy_round_<R>.json,  server/global_policies/global_policy_latest.json/*, server/policies/*, client/log_reward/*
 - ***IMPORTANCE*** Also, remember to navigate to /system/
   
-2. Start the Driver
+2. Start the Driver + Server
    The driver automatically launches the FastAPI WebSocket server:  
    **Navigate** to /system/server/, then run:
    `python driver.py <client_nums> <rounds>`
@@ -66,25 +66,26 @@ EPSILON = 0.05   #epsilon parameter for e-greedy action selection
 - Monitors policies folder for updates
 - Runs the Spark aggregator
 - Pushes global_policy to clients
-- Start Clients
+- ***NOTICE_1***: Must wait before "Server is ready!" to start clients
+- ***NOTICE_2***: Because of unknown reason, the client may experience timeout when connecting to server. In case of that, kill the server driver process and the terminal of client if needed. Restart the server driver and connect again
+## Synthetic Federated Multi-Armed Bandits Dataset
+
+3. Start Clients
   Each agent is launched with an ID in /system/client/:
   `python client.py 1`    
   `python client.py 2`    
   `python client.py 3`    
   `python client.py 4`    
-   The client will:
-      - Connect via WebSocket to /ws
-      - Register its client ID
-      - Receive the latest global Q-values
-      - Train locally
-      - Send local_update messages
-      - Receive new global policies from server
-      - When done rounds of aggregation, the process will be ended
-- ***NOTICE_1***: Must wait before "Server is ready!" to start clients
-- ***NOTICE_2***: Because of unknown reason, the client may experience timeout when connecting to server. In case of that, kill the server driver process and the terminal of client if needed. Restart the server driver and connect again
-## Synthetic Federated Multi-Armed Bandits Dataset
+  The client will:
+- Connect via WebSocket to /ws
+- Register its client ID
+- Receive the latest global Q-values
+- Train locally
+- Send local_update messages
+- Receive new global policies from server
+- When done rounds of aggregation, the process will be ended
 
-3. Start dashboard
+4. Start dashboard
    Navigate to /system/server, then run:
    `python dashboard.py`
    This will start a realtime dashboard for showing data about training
