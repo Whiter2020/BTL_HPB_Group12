@@ -11,6 +11,7 @@ python bandit.py 1 1
 """
 ACTION_SELECTION = "e-greedy"
 EPSILON = 0.05
+random.seed(42)
 
 def bandit(branch_id, round_id):
     print(f"Local RL Training | Branch {branch_id} | Round {round_id} ===")
@@ -116,7 +117,9 @@ def bandit(branch_id, round_id):
             if random.random() < EPSILON:
                 a = random.choice(range(len(actions)))
             else:
-                a = Q_values.index(max(Q_values))
+                max_value = np.max(Q_values)
+                candidates = np.flatnonzero(Q_values == max_value)
+                a = int(np.random.choice(candidates))
         else:
             a = random.choice(range(len(actions)))
         for idx in range(time*5,time*5+5):

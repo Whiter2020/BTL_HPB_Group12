@@ -24,7 +24,7 @@ SPARK_SUBMIT = r"C:\spark\bin\spark-submit.cmd"
 HDFS_EXE = r"C:\hadoop\bin\hdfs.cmd"
 
 ROUNDS = 10
-MIN_AGENTS = 4        # require at least this many agent files per round before aggregating
+MIN_AGENTS = 1        # require at least this many agent files per round before aggregating
 POLL_INTERVAL = 5     # seconds between checks (adjust)
 ROUND_TIMEOUT = 300   # seconds to wait max for agents in a round
 def wait_for_server(host, port, timeout=10):

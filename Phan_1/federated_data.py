@@ -14,40 +14,47 @@ def generate_federated_bandits(
 ):
 
     os.makedirs(output_dir, exist_ok=True)
-    q_global = np.random.normal(318, 225, size=k)
+    q_star = np.random.normal(318, 225, size=k)
+    for a in range(len(q_star)):
+            while True:
+                if q_star[a]> 0:
+                    break
+                q_star[a]=  np.random.normal(318, 225)
 
+
+
+    # Random matrix: shape (k, rounds)
+    drift_matrix = np.random.normal(
+        loc=0.0,
+        scale=drift_std,
+        size=(k, num_round)
+    )
+    print(q_star)
+    print(drift_matrix)
 
     for client_id in range(1, num_clients + 1):
 
         # --- Client heterogeneity ---
         client_noise = np.random.uniform(80, 150) if heterogeneous_noise else 100
-        client_drift = np.random.uniform(1, drift_std) if not stationary else 0
 
        
-        # --- Initialize q* values ---
-        q_star = np.zeros_like(q_global)
-        for a in range(len(q_star)):
-            while True:
-                q_star[a] =  np.random.normal(q_global[a], 60)
-                if q_star[a]> 0:
-                    break
-
-
-        
-        
-
         
         actions = ["voucher", "freeship", "combo", "flashsale", "loyalty"]
 
         for round in range(num_round):
             data = []
-            actual_size = np.random.normal((time_steps/num_round),20)
+            while True:
+                actual_size = np.random.normal((time_steps/num_round),100)
+                if actual_size > 0:
+                    break
+                if not stationary:
+                    q_star += drift_matrix[:,round]
+                    print(q_star)
+           
             for t in range(int(actual_size)):
 
                 # Non-stationary drift per client
-                if not stationary:
-                    q_star += np.random.normal(0, client_drift, size=k)
-
+                
                 # For each arm — generate one reward sample per timestep (full environment record)
                 for a in range(k):
                     while True:
@@ -79,7 +86,7 @@ def generate_federated_bandits(
     print(f"Federated dataset generated at: {output_dir}/")
 
 if __name__ == "__main__":
-    generate_federated_bandits( num_clients=4, k=5, time_steps=1000, num_round = 10, stationary=False, drift_std=2, heterogeneous_noise=True,output_dir="nonstat_hetero_data")
-    generate_federated_bandits( num_clients=4, k=5, time_steps=1000, num_round = 10,stationary=True, drift_std=2, heterogeneous_noise=False,output_dir="stat_data")
+    generate_federated_bandits( num_clients=4, k=5, time_steps=1000, num_round = 10, stationary=False, drift_std=5, heterogeneous_noise=True,output_dir="nonstat_hetero_data")
+    generate_federated_bandits( num_clients=4, k=5, time_steps=1000, num_round = 10,stationary=True, drift_std=10, heterogeneous_noise=False,output_dir="stat_data")
 
 
