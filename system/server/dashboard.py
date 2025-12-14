@@ -5,7 +5,7 @@ import json
 import pandas as pd
 from datetime import datetime
 
-WS_URL = "ws://127.0.0.1:8000/ws/dashboard"
+WS_URL = "ws://172.31.26.200:8000/ws/dashboard"
 
 async def connect_and_stream():
     history_df = pd.DataFrame(columns=["round", "global_reward", "runtime", "spark_latency", "throughput"])
