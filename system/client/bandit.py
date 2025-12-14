@@ -23,12 +23,12 @@ def bandit(branch_id, round_id):
         return {"status": "Error"}
 
     df = pd.read_parquet(data_path)
-    print(f"Loaded {len(df)} records")
+    # print(f"Loaded {len(df)} records")
     
 
     # Debug information about dataset structure
-    print("\n--- Dataset Columns ---")
-    print(df.columns.tolist())
+    # print("\n--- Dataset Columns ---")
+    # print(df.columns.tolist())
 
     # Validate reward column
     # ------------------------------------------------------------
@@ -69,7 +69,7 @@ def bandit(branch_id, round_id):
         print("No global policy found -> Cold start")
 
     time_stamp = len(df)/len(actions)
-    print(time_stamp)
+    # print(time_stamp)
 
     # Local RL training (Multi-Armed Bandit)
     # Each row represents one customer. The reward signal corresponds
@@ -135,8 +135,8 @@ def bandit(branch_id, round_id):
                     "avg_reward": float(avg_reward)
                 })
 
-        print("Training completed.")
-    print("[CLIENT]")
+    print("Training completed.")
+    # print("[CLIENT]")
 
    
   
@@ -164,5 +164,5 @@ def bandit(branch_id, round_id):
     with open(log_path, "w") as f:
         json.dump(log_data, f, indent=2)
     print(f"\nLocal policy saved to: {save_path}")
-    return {"status": "Success"}
+    return {"status": "Success", "reward": reward}
 
