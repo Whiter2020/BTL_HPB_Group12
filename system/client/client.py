@@ -54,8 +54,9 @@ async def run_client():
     global CLIENT_ID
     
     cleanup_client_directories(CLIENT_ID)
-    
-    async with websockets.connect("ws://127.0.0.1:8000/ws") as ws:
+    SERVER_IP = "172.31.26.200"
+
+    async with websockets.connect(f"ws://{SERVER_IP}:8000/ws") as ws:
         while True:
 
             # REGISTER FIRST
