@@ -270,7 +270,7 @@ def main():
     
     print("Starting Server...")
     server_proc = subprocess.Popen(
-    [sys.executable,"-m","uvicorn", "server:app", "--host", "127.0.0.1", "--port", "8000", "--log-level", "info"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=current_dir, shell=True)
+    [sys.executable,"-m","uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8000", "--log-level", "info"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=current_dir, shell=True)
     print("Server started in background.", server_proc.pid)
 
     if not wait_for_server("127.0.0.1", 8000, timeout=30):
